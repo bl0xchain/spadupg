@@ -4,6 +4,7 @@ pragma solidity >= 0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./SPAD.sol";
+import "./SPADActionsInterface.sol";
 
 contract SPADFactory is Initializable, OwnableUpgradeable {
     address spadImplementation;
@@ -54,7 +55,7 @@ contract SPADFactory is Initializable, OwnableUpgradeable {
         spad = SPAD(address(proxy));
         spads.push(address(spad));
 
-        // SPADActionsInterface(spadActionAddress).addSpad(address(spad), _currencyAddress, msg.sender);
+        SPADActionsInterface(spadActionAddress).addSpad(address(spad), _currencyAddress, msg.sender);
         emit SPADCreated(msg.sender, address(spad));
     }
 }
