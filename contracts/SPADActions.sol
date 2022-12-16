@@ -164,9 +164,9 @@ contract SPADActions is Initializable {
         return spadMeta.pitchers;
     }
 
-    function pitchSpad(address _spadAddress, string memory _name, string memory _description, string memory _passKey) public {
+    function pitchSpad(address _spadAddress, string memory _name, string memory _description) public {
         SPADInterface spad = getSpad(_spadAddress);
-        require(spad.checkPassKey(_passKey), "incorrect passkey");
+        // require(spad.checkPassKey(_passKey), "incorrect passkey");
         require(spad.status() == 4, "cannot pitch");
         SPADMeta storage spadMeta = spads[_spadAddress];
         require(spadMeta.investments[msg.sender] == 0, "cannot pitch");

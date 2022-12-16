@@ -1,6 +1,6 @@
 const API_KEY = process.env.API_KEY;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const CONTRACT_ADDRESS = "0x555e75EEb0520d8e3FCcfC5ad178620cb88Ce59d";
+const CONTRACT_ADDRESS = "0x0eA97e9f0FFDa7e9f58dfF7AACEB70d8F19FD85E";
 
 const contract = require("../artifacts/contracts/SPADFactory.sol/SPADFactory.json");
 
@@ -13,7 +13,7 @@ const spadFactoryContract = new ethers.Contract(CONTRACT_ADDRESS, contract.abi, 
 
 async function main() {
     console.log("Updating the SpadActionAddress...");
-    const tx = await spadFactoryContract.setSpadActionAddress("0x25AB13b8A9506Bf0aE874CfaEC1f23F3Ee42d78E");
+    const tx = await spadFactoryContract.setSpadActionAddress("0xC5A76703DDD390dB4C43499d546Fbc3aEcf30F04");
     await tx.wait();
     console.log("Updated the SpadActionAddress...");
 }
