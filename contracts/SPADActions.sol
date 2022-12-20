@@ -16,7 +16,7 @@ contract SPADActions is Initializable {
     struct SPADMeta {
         bool exists;
         mapping (address => uint) investments;
-        mapping(address => bool) claimed;
+        // mapping(address => bool) claimed;
         mapping(address => Pitch) pitches;
         uint currentInvestment;
         address[] pitchers;
@@ -36,7 +36,7 @@ contract SPADActions is Initializable {
     event Contributed(address indexed spadAddress, address indexed contributor, uint amount);
     event PitchProposed(address indexed spadAddress, address indexed pitcher);
     event PitchReviewed(address indexed spadAddress, address indexed pitcher, bool approved);
-    event InvestmentClaimed(address indexed spadAddress, address indexed contributor, uint amount);
+    // event InvestmentClaimed(address indexed spadAddress, address indexed contributor, uint amount);
 
     function initialize(address _spadFactoryAddress) public initializer {
         spadFactoryAddress = _spadFactoryAddress;
@@ -147,9 +147,9 @@ contract SPADActions is Initializable {
         emit Contributed(_spadAddress, msg.sender, _amount);
     }
 
-    function getContribution(address _spadAddress) public view returns (uint) {
+    function getContribution(address _spadAddress, address _contributor) public view returns (uint) {
         SPADMeta storage spadMeta = spads[_spadAddress];
-        return spadMeta.investments[msg.sender];
+        return spadMeta.investments[_contributor];
     }
 
     function getPitchesCount(address _spadAddress) public view returns (uint) {
@@ -207,24 +207,24 @@ contract SPADActions is Initializable {
         emit PitchReviewed(_spadAddress, _pitcher, _approved);
     }
 
-    function claimInvestment(address _spadAddress) public {
-        SPADInterface spad = getSpad(_spadAddress);
-        require(spad.status() == 5, "cannot claim");
-        SPADMeta storage spadMeta = spads[_spadAddress];
-        require(spadMeta.investments[msg.sender] > 0, "cannot claim");
-        require(spadMeta.claimed[msg.sender] == false, "already claimed");
-        IERC20Upgradeable spadToken = IERC20Upgradeable(spad.spadToken());
-        uint _amount = (spadMeta.investments[msg.sender] * spadToken.totalSupply()) / spad.target();
-        spadToken.transfer(msg.sender, _amount);
-        spadMeta.claimed[msg.sender] = true;
-        emit InvestmentClaimed(_spadAddress, msg.sender, _amount);
-    }
+    // function claimInvestment(address _spadAddress) public {
+    //     SPADInterface spad = getSpad(_spadAddress);
+    //     require(spad.status() == 5, "cannot claim");
+    //     SPADMeta storage spadMeta = spads[_spadAddress];
+    //     require(spadMeta.investments[msg.sender] > 0, "cannot claim");
+    //     require(spadMeta.claimed[msg.sender] == false, "already claimed");
+    //     // IERC20Upgradeable spadToken = IERC20Upgradeable(spad.spadToken());
+    //     uint _amount = (spadMeta.investments[msg.sender] * spad.totalSupply()) / spad.target();
+    //     spad.transferFrom(address(this), msg.sender, _amount);
+    //     spadMeta.claimed[msg.sender] = false;
+    //     emit InvestmentClaimed(_spadAddress, msg.sender, _amount);
+    // }
 
-    function isInvestmentClaimed(address _spadAddress) public view returns (bool) {
-        SPADMeta storage spadMeta = spads[_spadAddress];
-        require(spadMeta.investments[msg.sender] > 0, "cannot claim");
-        return spadMeta.claimed[msg.sender];
-    }
+    // function isInvestmentClaimed(address _spadAddress) public view returns (bool) {
+    //     SPADMeta storage spadMeta = spads[_spadAddress];
+    //     require(spadMeta.investments[msg.sender] > 0, "cannot claim");
+    //     return spadMeta.claimed[msg.sender];
+    // }
 
     function getInvestedSpads() public view returns (address[] memory) {
         return investedSpads[msg.sender];

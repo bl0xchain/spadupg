@@ -20,5 +20,8 @@ interface SPADInterface {
     function isPrivate() external view returns (bool);
     function created() external view returns (uint);
     function isUSDC() external view returns (bool);
-
+    
+    function transfer(address to, uint256 amount) external view returns (bool);
+    function totalSupply() external view returns (uint256);
+    function transferFrom(address sender, address recipient, uint256 amount) external view returns (bool);
 }

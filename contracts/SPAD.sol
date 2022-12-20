@@ -4,6 +4,7 @@ pragma solidity >= 0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./SPADActionsInterface.sol";
 
 contract SPAD is OwnableUpgradeable, ERC20Upgradeable {
     uint public target;
@@ -17,10 +18,12 @@ contract SPAD is OwnableUpgradeable, ERC20Upgradeable {
     address spadActionController;
     address public currencyAddress;
     uint public created;
-    uint8 private decimal = 18;
+    uint8 private decimal;
+    uint public totalTokens;
 
     event StatusUpdated(uint8 status);
     event CurrentInvestmentUpdated(uint investment);
+    event InvestmentClaimed(address indexed contributor, uint amount);
 
     function initialize(string memory name, string memory symbol, uint _totalSupply, address _spadInitiator, uint _target, uint _minInvestment, uint _maxInvestment, string memory _passKey, address _currencyAddress, address _spadActionController) public initializer {
         __ERC20_init(name, symbol);
@@ -34,8 +37,11 @@ contract SPAD is OwnableUpgradeable, ERC20Upgradeable {
         passKey = _passKey;
         if(_currencyAddress != address(0)) {
             decimal = IERC20MetadataUpgradeable(_currencyAddress).decimals();
+        } else {
+            decimal = 18;
         }
-        _mint(_spadActionController, _totalSupply);
+        // _mint(_spadActionController, _totalSupply);
+        totalTokens = _totalSupply;
         if(keccak256(abi.encodePacked(_passKey)) != keccak256(abi.encodePacked(""))) {
             isPrivate = true;
         }
@@ -69,5 +75,15 @@ contract SPAD is OwnableUpgradeable, ERC20Upgradeable {
         isController();
         currentInvestment = _currentInvestment;
         emit CurrentInvestmentUpdated(currentInvestment);
+    }
+
+    function claimTokens() public {
+        require(status == 5, "cannot claim");
+        require(balanceOf(msg.sender) == 0, "already claimed");
+        uint contribution = SPADActionsInterface(spadActionController).getContribution(address(this), msg.sender);
+        require(contribution > 0, "cannot claim");
+        uint _amount = (contribution * totalTokens) / target;
+        _mint(msg.sender, _amount);
+        emit InvestmentClaimed(msg.sender, _amount);
     }
 }
