@@ -28,7 +28,9 @@ contract SPADActions is Initializable {
     struct Pitch {
         string name;
         string description;
-        uint8 status; // 0:invalid, 1:proposed, 2:approved, 3:rejected
+        uint8 status; // 0:invalid, 1:proposed, 2:approved, 3:rejected, 4:selected
+        address tokenAddress;
+        uint tokenAmount;
     }
 
     event SpadAdded(address indexed spadAddress);
@@ -164,26 +166,31 @@ contract SPADActions is Initializable {
         return spadMeta.pitchers;
     }
 
-    function pitchSpad(address _spadAddress, string memory _name, string memory _description) public {
+    function pitchSpad(address _spadAddress, string memory _name, string memory _description, address _tokenAddress, uint _tokenAmount) public {
         SPADInterface spad = getSpad(_spadAddress);
         // require(spad.checkPassKey(_passKey), "incorrect passkey");
         require(spad.status() == 4, "cannot pitch");
         SPADMeta storage spadMeta = spads[_spadAddress];
         require(spadMeta.investments[msg.sender] == 0, "cannot pitch");
         require(spadMeta.pitches[msg.sender].status == 0, "already pitched");
+        if(_tokenAddress != address(0)) {
+            require(IERC20Upgradeable(_tokenAddress).totalSupply() > 0, "invalid token");
+        }
         // token.transferFrom(msg.sender, address(this), spadPitchFee);
         Pitch storage pitch = spadMeta.pitches[msg.sender];
         pitch.name = _name;
         pitch.description = _description;
         pitch.status = 1; // proposed
+        pitch.tokenAddress = _tokenAddress;
+        pitch.tokenAmount = _tokenAmount;
         spadMeta.pitchers.push(msg.sender);
         emit PitchProposed(_spadAddress, msg.sender);
     }
 
-    function getPitch(address _spadAddress) public view returns (string memory name, string memory description, uint8 status) {
+    function getPitch(address _spadAddress) public view returns (string memory name, string memory description, uint8 status, address tokenAddress, uint tokenAmount) {
         SPADMeta storage spadMeta = spads[_spadAddress];
         Pitch memory pitch = spadMeta.pitches[msg.sender];
-        return (pitch.name, pitch.description, pitch.status);
+        return (pitch.name, pitch.description, pitch.status, pitch.tokenAddress, pitch.tokenAmount);
     }
 
     function pitchReview(address _spadAddress, address _pitcher, bool _approved) public {
@@ -193,18 +200,38 @@ contract SPADActions is Initializable {
         require(spadMeta.pitches[_pitcher].status == 1, "invalid/already pitched");
         Pitch storage pitch = spadMeta.pitches[_pitcher];
         if(_approved) {
-            pitch.status = 2;
-            if(spadMeta.currencyAddress != address(0)) {
-                IERC20Upgradeable(spadMeta.currencyAddress).transfer(_pitcher, spad.target());
+            if(pitch.tokenAddress != address(0)) {
+                pitch.status = 2;
+                if(spadMeta.currencyAddress != address(0)) {
+                    IERC20Upgradeable(spadMeta.currencyAddress).transfer(_pitcher, spad.target());
+                } else {
+                    payable(_pitcher).transfer(spad.target());
+                }
+                spad.updateStatus(5);
+                spadMeta.acquiredBy = _pitcher;
             } else {
-                payable(_pitcher).transfer(spad.target());
+                pitch.status = 4;
             }
-            spad.updateStatus(5);
-            spadMeta.acquiredBy = _pitcher;
         } else {
             pitch.status = 3;
         }
         emit PitchReviewed(_spadAddress, _pitcher, _approved);
+    }
+
+    function claimPitch(address _spadAddress) public {
+        SPADInterface spad = getSpad(_spadAddress);
+        SPADMeta storage spadMeta = spads[_spadAddress];
+        Pitch storage pitch = spadMeta.pitches[msg.sender];
+        require(pitch.status == 4, "not allowed");
+        IERC20Upgradeable(pitch.tokenAddress).transferFrom(msg.sender, address(spad), pitch.tokenAmount);
+        pitch.status = 2;
+        if(spadMeta.currencyAddress != address(0)) {
+            IERC20Upgradeable(spadMeta.currencyAddress).transfer(msg.sender, spad.target());
+        } else {
+            payable(msg.sender).transfer(spad.target());
+        }
+        spad.updateStatus(5);
+        spadMeta.acquiredBy = msg.sender;
     }
 
     // function claimInvestment(address _spadAddress) public {

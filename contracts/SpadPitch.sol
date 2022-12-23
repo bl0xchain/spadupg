@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./SpadToken.sol";
+import "./ISpad.sol";
+
+contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
+    address private actionsAddress;
+    mapping(address => SpadData) spads;
+
+    struct SpadData {
+        bool exists;
+        mapping(address => Pitch) pitches;
+        address[] pitchers;
+        address acquiredBy;
+    }
+
+    struct Pitch {
+        string name;
+        string description;
+        uint8 status; // 0:invalid, 1:proposed, 2:approved, 3:rejected, 4:selected
+        address tokenAddress;
+        uint tokenAmount;
+    }
+
+    event PitchProposed(address indexed spadAddress, address indexed pitcher);
+    event PitchReviewed(address indexed spadAddress, address indexed pitcher, bool approved);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() initializer public {
+        __Pausable_init();
+        __Ownable_init();
+    }
+
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
+    modifier onlyActions() {
+        require(msg.sender == actionsAddress, "not actions");
+        _;
+    }
+
+    function addSpad(address spadAddress) public onlyActions {
+        require(spads[spadAddress].exists == false, "already exists");
+        SpadData storage spadData = spads[spadAddress];
+        spadData.exists = true;
+    }
+
+    function getSpad(address spadAddress) internal view returns (ISpad) {
+        require(spads[spadAddress].exists == true, "not found");
+        return ISpad(spadAddress);
+    }
+
+    function pitchSpad(address spadAddress, string memory name, string memory description, address tokenAddress, uint tokenAmount, address pitcher) public onlyActions returns (bool) {
+        ISpad spad = getSpad(spadAddress);
+        require(spad.status() == 4, "cannot pitch");
+        SpadData storage spadData = spads[spadAddress];
+        // require(spadData.investments[msg.sender] == 0, "cannot pitch");
+        require(spadData.pitches[pitcher].status == 0, "already pitched");
+        require(tokenAmount > 0, "token amount should be more than 0");
+        if(tokenAddress != address(0)) {
+            require(IERC20(tokenAddress).totalSupply() > 0, "invalid token");
+        }
+        Pitch storage pitch = spadData.pitches[pitcher];
+        pitch.name = name;
+        pitch.description = description;
+        pitch.status = 1; // proposed
+        pitch.tokenAddress = tokenAddress;
+        pitch.tokenAmount = tokenAmount;
+        spadData.pitchers.push(pitcher);
+        // emit PitchProposed(spadAddress, pitcher);
+        return true;
+    }
+
+    function getPitch(address spadAddress, address pitcher) public view returns (string memory name, string memory description, uint8 status, address tokenAddress, uint tokenAmount) {
+        SpadData storage spadData = spads[spadAddress];
+        Pitch memory pitch = spadData.pitches[pitcher];
+        return (pitch.name, pitch.description, pitch.status, pitch.tokenAddress, pitch.tokenAmount);
+    }
+
+    function pitchReview(address spadAddress, address pitcher, bool approved) public onlyActions returns (uint8) {
+        ISpad spad = getSpad(spadAddress);
+        // require(msg.sender == spad.creator(), "not allowed");
+        SpadData storage spadData = spads[spadAddress];
+        require(spadData.pitches[pitcher].status == 1, "invalid/already pitched");
+        Pitch storage pitch = spadData.pitches[pitcher];
+        if(approved) {
+            if(pitch.tokenAddress == address(0)) {
+                pitch.status = 2;
+                // if(spad.currencyAddress() != address(0)) {
+                //     IERC20(spad.currencyAddress()).transfer(pitcher, spad.target());
+                // } else {
+                //     payable(pitcher).transfer(spad.target());
+                // }
+                // spad.updateStatus(5);
+                spadData.acquiredBy = pitcher;
+                
+                // Create token for distribution;
+                SpadToken token = new SpadToken(spad.name(), spad.symbol());
+                pitch.tokenAddress = address(token);
+                token.mint(address(actionsAddress), pitch.tokenAmount);
+            } else {
+                pitch.status = 4;
+            }
+        } else {
+            pitch.status = 3;
+        }
+        emit PitchReviewed(spadAddress, pitcher, approved);
+        return pitch.status;
+    }
+
+    function getPitchToken(address spadAddress, address pitcher) public view onlyActions returns (address, uint) {
+        SpadData storage spadData = spads[spadAddress];
+        Pitch storage pitch = spadData.pitches[pitcher];
+        return (pitch.tokenAddress, pitch.tokenAmount);
+    }
+
+    function claimPitch(address spadAddress, address pitcher) public onlyActions returns (bool) {
+        // ISpad spad = getSpad(spadAddress);
+        SpadData storage spadData = spads[spadAddress];
+        Pitch storage pitch = spadData.pitches[pitcher];
+        require(pitch.status == 4, "not allowed");
+        // IERC20(pitch.tokenAddress).transferFrom(msg.sender, address(spad), pitch.tokenAmount);
+        pitch.status = 2;
+        // if(spad.currencyAddress() != address(0)) {
+        //     IERC20(spad.currencyAddress()).transfer(msg.sender, spad.target());
+        // } else {
+        //     payable(msg.sender).transfer(spad.target());
+        // }
+        // spad.updateStatus(5);
+        spadData.acquiredBy = msg.sender;
+        return true;
+    }
+
+    function getAcquiredBy(address spadAddress) public view onlyActions returns (address) {
+        SpadData storage spadData = spads[spadAddress];
+        return spadData.acquiredBy;
+    }
+}
