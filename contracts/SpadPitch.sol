@@ -35,9 +35,10 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
         _disableInitializers();
     }
 
-    function initialize() initializer public {
+    function initialize(address _actionsAddress) initializer public {
         __Pausable_init();
         __Ownable_init();
+        actionsAddress = _actionsAddress;
     }
 
     function pause() public onlyOwner {

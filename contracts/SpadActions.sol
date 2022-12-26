@@ -27,12 +27,10 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
         _disableInitializers();
     }
 
-    function initialize(address _factoryAddress, address _fundAddress, address _pitchAddress) initializer public {
+    function initialize(address _factoryAddress) initializer public {
         __Pausable_init();
         __Ownable_init();
         factoryAddress = _factoryAddress;
-        fundAddress = _fundAddress;
-        pitchAddress = _pitchAddress;
     }
 
     function pause() public onlyOwner {
@@ -41,6 +39,11 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
 
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    function setModuleAddresses(address _fundAddress, address _pitchAddress ) public onlyOwner {
+        fundAddress = _fundAddress;
+        pitchAddress = _pitchAddress;
     }
 
     function addSpad(address spadAddress) public {
