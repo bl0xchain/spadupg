@@ -16,6 +16,7 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         mapping (address => uint) investments;
         uint currentInvestment;
         uint investorCount;
+        mapping (address => bool) claimedInvestment;
     }
 
     // event SpadActivated(address spadAddress);
@@ -64,17 +65,11 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         uint amount = (target * 10 / 100);
 
         SpadData storage spadData = spads[spadAddress];
-        // if(spad.currencyAddress() != address(0)) {
-        //     IERC20(spad.currencyAddress()).transferFrom(msg.sender, address(this), amount);
-        // } else {
-        //     require(msg.value == amount, "invalid contribution");
-        // }
+        
         spadData.investments[creator] = amount;
         spadData.investorCount = 1;
         spadData.currentInvestment = amount;
-        // spad.updateStatus(2);
-
-        // emit SpadActivated(spadAddress);
+        
         return true;
     }
 
@@ -113,8 +108,20 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         return spadData.investments[contributor];
     }
 
-    function getFundData(address spadAddress) public view returns (uint currrentInvestment, uint investorCount) {
+    function getFundData(address spadAddress) public view returns (uint currentInvestment, uint investorCount) {
         SpadData storage spadData = spads[spadAddress];
         return (spadData.currentInvestment, spadData.investorCount);
+    }
+
+    function isInvestmentClaimed(address spadAddress, address contributor) public view returns (bool) {
+        SpadData storage spadData = spads[spadAddress];
+        return spadData.claimedInvestment[contributor];
+    }
+
+    function claimInvestment(address spadAddress, address contributor) public onlyActions returns (bool) {
+        SpadData storage spadData = spads[spadAddress];
+        require(spadData.claimedInvestment[contributor] == false, "already claimed");
+        spadData.claimedInvestment[contributor] = true;
+        return true;
     }
 }

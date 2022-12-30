@@ -7,4 +7,6 @@ interface ISpadFund {
     function contribute(address spadAddress, uint amount, address contributor) external returns (bool);
     function getContribution(address spadAddress, address contributor) external view returns (uint);
     function getFundData(address spadAddress) external view returns (uint currrentInvestment, uint investorCount);
+    function isInvestmentClaimed(address spadAddress, address contributor) external view returns (bool);
+    function claimInvestment(address spadAddress, address contributor) external returns (bool);
 }

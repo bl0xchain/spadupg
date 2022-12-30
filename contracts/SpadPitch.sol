@@ -146,7 +146,7 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
         return true;
     }
 
-    function getAcquiredBy(address spadAddress) public view onlyActions returns (address) {
+    function getAcquiredBy(address spadAddress) public view returns (address) {
         SpadData storage spadData = spads[spadAddress];
         return spadData.acquiredBy;
     }
