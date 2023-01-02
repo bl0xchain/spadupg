@@ -46,13 +46,13 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
         pitchAddress = _pitchAddress;
     }
 
-    function addSpad(address spadAddress) public {
+    function addSpad(address spadAddress, string memory passKey) public {
         require(msg.sender == factoryAddress, "not allowed");
-        ISpadFund(fundAddress).addSpad(spadAddress);
+        ISpadFund(fundAddress).addSpad(spadAddress, passKey);
         ISpadPitch(pitchAddress).addSpad(spadAddress);
     }
 
-    function activateSpad(address spadAddress) public payable {
+    function activateSpad(address spadAddress, string memory pitchDetails, address tokenAddress, uint tokenAmount) public payable {
         require(ISpadFund(fundAddress).activateSpad(spadAddress, msg.sender) == true, "error");
         ISpad spad = ISpad(spadAddress);
         uint amount = (spad.target() * 10 / 100);
@@ -62,13 +62,20 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
             require(msg.value == amount, "invalid contribution");
         }
         spad.updateStatus(2);
+
+        // check initiator pitch
+        if(ISpadFund(fundAddress).isPrivate(spadAddress)) {
+            require(ISpadPitch(pitchAddress).pitchSpad(spadAddress, "Pitch from SPAD creator", pitchDetails, tokenAddress, tokenAmount, msg.sender) == true, "error");
+        }
         emit SpadActivated(spadAddress);
     }
 
-    function contribute(address spadAddress, uint amount) public payable {
+    function contribute(address spadAddress, uint amount, string memory passKey) public payable {
         uint currentInvestment;
-        (currentInvestment, ) = ISpadFund(fundAddress).getFundData(spadAddress);
-        require(ISpadFund(fundAddress).contribute(spadAddress, amount, msg.sender) == true, "error");
+        ISpadFund spadFund = ISpadFund(fundAddress);
+        require(spadFund.isPasswordMatch(spadAddress, passKey) == true, "invalid passkey");
+        (currentInvestment, ) = spadFund.getFundData(spadAddress);
+        require(spadFund.contribute(spadAddress, amount, msg.sender) == true, "error");
         ISpad spad = ISpad(spadAddress);
         if(spad.currencyAddress() != address(0)) {
             IERC20(spad.currencyAddress()).transferFrom(msg.sender, address(this), amount);
@@ -76,7 +83,11 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
             require(msg.value == amount, "invalid contribution");
         }
         if(currentInvestment + amount == spad.target()) {
-            spad.updateStatus(4);
+            if(spadFund.isPrivate(spadAddress)) {
+                processPitchApproval(spadAddress, spad.creator(), true);
+            } else {
+                spad.updateStatus(4);
+            }
         }
         emit Contributed(spadAddress, msg.sender, amount);
     }
@@ -94,6 +105,12 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
     function pitchReview(address spadAddress, address pitcher, bool approved) public {
         ISpad spad = ISpad(spadAddress);
         require(msg.sender == spad.creator(), "not allowed");
+        require(msg.sender != pitcher, "cannot review own pitch");
+        processPitchApproval(spadAddress, pitcher, approved);
+    }
+
+    function processPitchApproval(address spadAddress, address pitcher, bool approved) private {
+        ISpad spad = ISpad(spadAddress);
         uint pitchStatus = ISpadPitch(pitchAddress).pitchReview(spadAddress, pitcher, approved);
         require(pitchStatus > 1, "error");
         if(pitchStatus == 2) {

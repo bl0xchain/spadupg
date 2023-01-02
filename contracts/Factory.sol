@@ -50,7 +50,7 @@ contract Factory is Initializable, PausableUpgradeable, OwnableUpgradeable {
         return validSpads[spadAddress];
     }
 
-    function createSpad(string memory _name, string memory _symbol, uint _target, uint _minInvestment, uint _maxInvestment, address _currencyAddress) public {
+    function createSpad(string memory _name, string memory _symbol, uint _target, uint _minInvestment, uint _maxInvestment, address _currencyAddress, string memory passKey) public {
         require(existingSymbols[_symbol] == false, "duplicate symbol");
         if(_currencyAddress != address(0)) {
             require(validCurrencies[_currencyAddress] == true, "invalid currency");
@@ -63,7 +63,7 @@ contract Factory is Initializable, PausableUpgradeable, OwnableUpgradeable {
         );
         spads.push(address(proxy));
         validSpads[address(proxy)] = true;
-        ISpadActions(actionsAddress).addSpad(address(proxy));
+        ISpadActions(actionsAddress).addSpad(address(proxy), passKey);
         emit SpadCreated(msg.sender, address(proxy));
     }
 

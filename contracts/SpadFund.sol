@@ -17,6 +17,7 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         uint currentInvestment;
         uint investorCount;
         mapping (address => bool) claimedInvestment;
+        string passKey;
     }
 
     // event SpadActivated(address spadAddress);
@@ -46,10 +47,11 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         _;
     }
 
-    function addSpad(address spadAddress) public onlyActions {
+    function addSpad(address spadAddress, string memory passKey) public onlyActions {
         require(spads[spadAddress].exists == false, "already exists");
         SpadData storage spadData = spads[spadAddress];
         spadData.exists = true;
+        spadData.passKey = passKey;
     }
 
     function getSpad(address spadAddress) internal view returns (ISpad) {
@@ -123,5 +125,23 @@ contract SpadFund is Initializable, PausableUpgradeable, OwnableUpgradeable {
         require(spadData.claimedInvestment[contributor] == false, "already claimed");
         spadData.claimedInvestment[contributor] = true;
         return true;
+    }
+
+    function isPrivate(address spadAddress) public view returns (bool) {
+        SpadData storage spadData = spads[spadAddress];
+        if(keccak256(abi.encodePacked(spadData.passKey)) != keccak256(abi.encodePacked(""))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function isPasswordMatch(address spadAddress, string memory passKey) public view returns (bool) {
+        SpadData storage spadData = spads[spadAddress];
+        if(keccak256(abi.encodePacked(spadData.passKey)) == keccak256(abi.encodePacked(passKey))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

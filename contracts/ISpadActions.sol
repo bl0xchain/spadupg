@@ -2,5 +2,5 @@
 pragma solidity ^0.8.9;
 
 interface ISpadActions {
-    function addSpad(address spadAddress) external;
+    function addSpad(address spadAddress, string memory passKey) external;
 }
