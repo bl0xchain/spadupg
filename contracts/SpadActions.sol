@@ -10,11 +10,13 @@ import "./IFactory.sol";
 import "./ISpad.sol";
 import "./ISpadFund.sol";
 import "./ISpadPitch.sol";
+import "./IPrivacy.sol";
 
 contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
     address private factoryAddress;
     address private fundAddress;
     address private pitchAddress;
+    address private privacyAddress;
 
     event SpadActivated(address spadAddress);
     event Contributed(address indexed spadAddress, address indexed contributor, uint amount);
@@ -41,15 +43,17 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
         _unpause();
     }
 
-    function setModuleAddresses(address _fundAddress, address _pitchAddress ) public onlyOwner {
+    function setModuleAddresses(address _fundAddress, address _pitchAddress, address _privacyAddress) public onlyOwner {
         fundAddress = _fundAddress;
         pitchAddress = _pitchAddress;
+        privacyAddress = _privacyAddress;
     }
 
     function addSpad(address spadAddress, string memory passKey) public {
         require(msg.sender == factoryAddress, "not allowed");
-        ISpadFund(fundAddress).addSpad(spadAddress, passKey);
+        ISpadFund(fundAddress).addSpad(spadAddress);
         ISpadPitch(pitchAddress).addSpad(spadAddress);
+        IPrivacy(privacyAddress).addSpad(spadAddress, passKey);
     }
 
     function activateSpad(address spadAddress, string memory pitchDetails, address tokenAddress, uint tokenAmount) public payable {
@@ -64,7 +68,7 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
         spad.updateStatus(2);
 
         // check initiator pitch
-        if(ISpadFund(fundAddress).isPrivate(spadAddress)) {
+        if(IPrivacy(privacyAddress).isPrivate(spadAddress)) {
             require(ISpadPitch(pitchAddress).pitchSpad(spadAddress, "Pitch from SPAD creator", pitchDetails, tokenAddress, tokenAmount, msg.sender) == true, "error");
         }
         emit SpadActivated(spadAddress);
@@ -73,7 +77,7 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
     function contribute(address spadAddress, uint amount, string memory passKey) public payable {
         uint currentInvestment;
         ISpadFund spadFund = ISpadFund(fundAddress);
-        require(spadFund.isPasswordMatch(spadAddress, passKey) == true, "invalid passkey");
+        require(IPrivacy(privacyAddress).isPasswordMatch(spadAddress, passKey) == true, "invalid passkey");
         (currentInvestment, ) = spadFund.getFundData(spadAddress);
         require(spadFund.contribute(spadAddress, amount, msg.sender) == true, "error");
         ISpad spad = ISpad(spadAddress);
@@ -83,7 +87,7 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
             require(msg.value == amount, "invalid contribution");
         }
         if(currentInvestment + amount == spad.target()) {
-            if(spadFund.isPrivate(spadAddress)) {
+            if(IPrivacy(privacyAddress).isPrivate(spadAddress)) {
                 processPitchApproval(spadAddress, spad.creator(), true);
             } else {
                 spad.updateStatus(4);

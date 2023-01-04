@@ -17,6 +17,7 @@ contract Factory is Initializable, PausableUpgradeable, OwnableUpgradeable {
     mapping (address => bool) validSpads;
 
     event SpadCreated(address indexed initiator, address spadAddress);
+    event SpadPrivateCreated(address indexed initiator, address spadAddress);
     
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -64,7 +65,11 @@ contract Factory is Initializable, PausableUpgradeable, OwnableUpgradeable {
         spads.push(address(proxy));
         validSpads[address(proxy)] = true;
         ISpadActions(actionsAddress).addSpad(address(proxy), passKey);
-        emit SpadCreated(msg.sender, address(proxy));
+        if(keccak256(abi.encodePacked(passKey)) != keccak256(abi.encodePacked(""))) {
+            emit SpadPrivateCreated(msg.sender, address(proxy));
+        } else {
+            emit SpadCreated(msg.sender, address(proxy));
+        }
     }
 
 }

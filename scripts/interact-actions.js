@@ -13,7 +13,7 @@ const spadActionsContract = new ethers.Contract(CONTRACT_ADDRESS, contract.abi, 
 
 async function main() {
     console.log("Updating ModuleAddresses...");
-    const tx = await spadActionsContract.setModuleAddresses("0xb1Daa2132F827Cd661Adf4074D3fF30e76eC6834", "0x071555BdD27A365F0b0697CFA35a78357F67A87B");
+    const tx = await spadActionsContract.setModuleAddresses("0xb1Daa2132F827Cd661Adf4074D3fF30e76eC6834", "0x071555BdD27A365F0b0697CFA35a78357F67A87B", "0x5725a126E67230bdCEcE997BBaCE45A4BF72138E");
     await tx.wait();
     console.log("Updated ModuleAddresses...");
 }
