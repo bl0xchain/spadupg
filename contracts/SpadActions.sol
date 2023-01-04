@@ -98,6 +98,7 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
 
     function pitchSpad(address spadAddress, string memory name, string memory description, address tokenAddress, uint tokenAmount) public {
         require(ISpadFund(fundAddress).getContribution(spadAddress, msg.sender) == 0, "not allowed");
+        require(ISpad(spadAddress).status() == 4, "cannot pitch");
         require(ISpadPitch(pitchAddress).pitchSpad(spadAddress, name, description, tokenAddress, tokenAmount, msg.sender) == true, "error");
         emit PitchProposed(spadAddress, msg.sender);
     }

@@ -66,10 +66,7 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
     }
 
     function pitchSpad(address spadAddress, string memory name, string memory description, address tokenAddress, uint tokenAmount, address pitcher) public onlyActions returns (bool) {
-        ISpad spad = getSpad(spadAddress);
-        require(spad.status() == 4, "cannot pitch");
         SpadData storage spadData = spads[spadAddress];
-        // require(spadData.investments[msg.sender] == 0, "cannot pitch");
         require(spadData.pitches[pitcher].status == 0, "already pitched");
         require(tokenAmount > 0, "token amount should be more than 0");
         if(tokenAddress != address(0)) {
@@ -82,7 +79,6 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
         pitch.tokenAddress = tokenAddress;
         pitch.tokenAmount = tokenAmount;
         spadData.pitchers.push(pitcher);
-        // emit PitchProposed(spadAddress, pitcher);
         return true;
     }
 
