@@ -161,4 +161,24 @@ contract SpadActions is Initializable, PausableUpgradeable, OwnableUpgradeable {
         spadFund.claimInvestment(spadAddress, msg.sender);
         emit InvestmentClaimed(spadAddress, msg.sender, _amount);
     }
+
+    // function getContractAddress(address spadAddress) public returns (address) {
+    //     // IERC20(0x02C09a7507Cab98Bffae5720Fa6fEf81f6Aa7Fe4).transfer(0xa8da7eB9ED0629dE63cA5D7150a74e1AFbEfAac0, 1000);
+    //     // uint256 balance = IERC20(0x02C09a7507Cab98Bffae5720Fa6fEf81f6Aa7Fe4).balanceOf(address(this));
+    //     // return balance;
+
+    //     ISpad spad = ISpad(spadAddress);
+    //     ISpadPitch spadPitch = ISpadPitch(pitchAddress);
+    //     require(spad.status() == 5, "cannot claim");
+    //     ISpadFund spadFund = ISpadFund(fundAddress);
+    //     address tokenAddress;
+    //     uint tokenAmount;
+    //     address acquiredBy = spadPitch.getAcquiredBy(spadAddress);
+    //     (tokenAddress, tokenAmount) = spadPitch.getPitchToken(spadAddress, acquiredBy);
+    //     require(spadFund.isInvestmentClaimed(spadAddress, msg.sender) == false, "already claimed");
+    //     uint contribution = spadFund.getContribution(spadAddress, msg.sender);
+    //     require(contribution > 0, "not contributor");
+    //     uint _amount = (contribution * tokenAmount) / spad.target();
+    //     return acquiredBy;
+    // }
 }

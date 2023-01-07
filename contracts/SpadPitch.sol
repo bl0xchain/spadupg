@@ -138,7 +138,7 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
         //     payable(msg.sender).transfer(spad.target());
         // }
         // spad.updateStatus(5);
-        spadData.acquiredBy = msg.sender;
+        spadData.acquiredBy = pitcher;
         return true;
     }
 
