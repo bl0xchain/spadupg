@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
-contract Spad is Initializable, PausableUpgradeable, OwnableUpgradeable {
-    address private actionsAddress;
+contract Spad is Pausable, Ownable {
+    address public actionsAddress;
     string public name;
     string public symbol;
     address public creator;
@@ -19,15 +17,7 @@ contract Spad is Initializable, PausableUpgradeable, OwnableUpgradeable {
 
     event StatusUpdated(uint8 status);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(string memory _name, string memory _symbol, address _creator, uint _target, uint _minInvestment, uint _maxInvestment, address _currencyAddress, address _actionsAddress) initializer public {
-        __Pausable_init();
-        __Ownable_init();
-
+    constructor(string memory _name, string memory _symbol, address _creator, uint _target, uint _minInvestment, uint _maxInvestment, address _currencyAddress, address _actionsAddress) {
         name = _name;
         symbol = _symbol;
         creator = _creator;

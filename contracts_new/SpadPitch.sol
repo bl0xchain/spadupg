@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./SpadToken.sol";
 import "./ISpad.sol";
 
-contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
+contract SpadPitch is Pausable, Ownable {
     address private actionsAddress;
     mapping(address => SpadData) spads;
 
@@ -30,14 +29,7 @@ contract SpadPitch is Initializable, PausableUpgradeable, OwnableUpgradeable {
     event PitchProposed(address indexed spadAddress, address indexed pitcher);
     event PitchReviewed(address indexed spadAddress, address indexed pitcher, bool approved);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address _actionsAddress) initializer public {
-        __Pausable_init();
-        __Ownable_init();
+    constructor(address _actionsAddress) {
         actionsAddress = _actionsAddress;
     }
 
